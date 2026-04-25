@@ -66,12 +66,12 @@ def add_students():
             (name,marks,grade)
             )
             con.commit()
-            con.close()
+            
         except sqlite3.IntegrityError:
             return jsonify({"error" : f"{name} is already exists"}), 409
         
         count+=1
-
+    con.close()
     return jsonify({
         "status" : "success",
         "add" : count
@@ -130,10 +130,11 @@ def delete_student(name):
 
     cursor.execute("DELETE FROM students WHERE name=?",(name,))
     con.commit()
-    con.close()
 
     if cursor.rowcount == 0:
         return jsonify({"error" : "student not found"}), 404
+
+    con.close()
 
     return jsonify({"status" : "deleted"}), 200
 
@@ -159,11 +160,12 @@ def update_student(name):
 
     cursor.execute("UPDATE students SET marks=?,grade=? WHERE name=?",(marks,grade,name))
     con.commit()
-    con.close()
-    
+
     if cursor.rowcount == 0:
         return jsonify({"error" : "name not found"}), 404
     
+    con.close()
+
     return jsonify({"status" : "data updated"}), 200
 
 
