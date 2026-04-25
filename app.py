@@ -4,18 +4,23 @@ import os
 
 app = Flask('__name__')
 
-#creating an database file 
-con = sqlite3.connect("students.db",check_same_thread=False)
-cursor = con.cursor()
-
 #creating table students
-cursor.execute(""" CREATE TABLE IF NOT EXISTS students(
-    name TEXT PRIMARY KEY,
-    marks INTEGER,
-    grade TEXT           
-)
-""")
-con.commit()
+def init_db():
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            name TEXT PRIMARY KEY,
+            marks INTEGER,
+            grade TEXT
+        )
+    """)
+
+    con.commit()
+    con.close()
+
+init_db()
 
 #function for grades
 def get_grade(marks):
@@ -34,6 +39,11 @@ def get_grade(marks):
 
 @app.route('/students',methods=['POST'])
 def add_students():
+
+    #creating and connecting an database file 
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()
+
     data = request.get_json()
 
     if isinstance(data,dict):
@@ -45,7 +55,7 @@ def add_students():
         name = student.get('name')
         marks = student.get('marks')
 
-        if not name or not isinstance(marks):
+        if not name or not isinstance(marks,int):
             return jsonify({"error" : "invalid input"}), 400
         
         grade = get_grade(marks)
@@ -56,11 +66,12 @@ def add_students():
             (name,marks,grade)
             )
             con.commit()
+            con.close()
         except sqlite3.IntegrityError:
             return jsonify({"error" : f"{name} is already exists"}), 409
         
         count+=1
-    
+
     return jsonify({
         "status" : "success",
         "add" : count
@@ -68,8 +79,14 @@ def add_students():
 
 @app.route("/students",methods=['GET'])
 def get_students():
+
+    #creating and connecting an database file 
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()
+
     cursor.execute("SELECT * FROM students")
     rows = cursor.fetchall()
+    con.close()
 
     result = {}
 
@@ -85,8 +102,14 @@ def get_students():
 
 @app.route('/students/<name>',methods=['GET'])
 def get_student(name):
+
+    #creating and connecting an database file 
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()
+
     cursor.execute("SELECT * FROM students WHERE name=?",(name,))
     result = cursor.fetchone()
+    con.close()
 
     if not result:
         return jsonify({"error" : "name not found"}), 404
@@ -101,8 +124,13 @@ def get_student(name):
 @app.route("/students/<name>",methods=["DELETE"])
 def delete_student(name):
 
+    #creating and connecting an database file 
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()    
+
     cursor.execute("DELETE FROM students WHERE name=?",(name,))
     con.commit()
+    con.close()
 
     if cursor.rowcount == 0:
         return jsonify({"error" : "student not found"}), 404
@@ -112,9 +140,13 @@ def delete_student(name):
 #funtion to update marks
 @app.route('/students/<name>',methods=['PUT'])
 def update_student(name):
+
+    #creating and connecting an database file 
+    con = sqlite3.connect("students.db")
+    cursor = con.cursor()
+
     data = request.get_json()
     
-
     if not data or 'marks' not in data:
         return jsonify({"error" : "marks is required"}), 400
     
@@ -127,7 +159,8 @@ def update_student(name):
 
     cursor.execute("UPDATE students SET marks=?,grade=? WHERE name=?",(marks,grade,name))
     con.commit()
-
+    con.close()
+    
     if cursor.rowcount == 0:
         return jsonify({"error" : "name not found"}), 404
     
