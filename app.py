@@ -4,6 +4,28 @@ import os
 
 app = Flask('__name__')
 
+#funtion to display info doc
+@app.route('/')
+def doc():
+    return {
+        "message" : "student API",
+        "endpoints" : {
+            "GET /students" : "get all students",
+            "POST /students" : "add students",
+            "GET /students/<name>" : "get one student",
+            "PUT /students/<name>" : "update student marks",
+            "DELETE /student/<name>" : "delete student"
+        }
+    }
+
+#versioning for later upgrades
+@app.route("/api/v1/students")
+
+#funtion to check the health
+@app.route("/health")
+def health():
+    return {"status": "ok"}
+
 #creating table students
 def init_db():
     con = sqlite3.connect("students.db")
@@ -37,6 +59,7 @@ def get_grade(marks):
     else:
         return "FAIL"
 
+#funtion for insert the movies
 @app.route('/students',methods=['POST'])
 def add_students():
 
@@ -77,6 +100,7 @@ def add_students():
         "add" : count
     }), 201
 
+#funtion to fetch all data
 @app.route("/students",methods=['GET'])
 def get_students():
 
@@ -100,6 +124,7 @@ def get_students():
         "data" : result
     }), 200
 
+#funtion to fetch data by name
 @app.route('/students/<name>',methods=['GET'])
 def get_student(name):
 
