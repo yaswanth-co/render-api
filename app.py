@@ -61,43 +61,56 @@ def get_grade(marks):
 #funtion for insert the movies
 @app.route('/students',methods=['POST'])
 def add_students():
+    try:
+        #creating and connecting an database file 
+        con = sqlite3.connect("students.db")
+        cursor = con.cursor()
 
-    #creating and connecting an database file 
-    con = sqlite3.connect("students.db")
-    cursor = con.cursor()
+        data = request.get_json()
 
-    data = request.get_json()
+        if not data:
+            return jsonify({"error" : "No JSON data provided"}), 400
 
-    if isinstance(data,dict):
-        data = [data]
+        if isinstance(data,dict):
+            data = [data]
 
-    count = 0
+        count = 0
 
-    for student in data:
-        name = student.get('name')
-        marks = student.get('marks')
+        for student in data:
+            name = student.get('name')
+            marks = student.get('marks')
 
-        if not name or not isinstance(marks,int):
-            return jsonify({"error" : "invalid input"}), 400
-        
-        grade = get_grade(marks)
-        
-        try:
-            cursor.execute(
-            "INSERT INTO students(name,marks,grade) VALUES(?,?,?)",
-            (name,marks,grade)
-            )
-            con.commit()
+            if not name:
+                return jsonify({"error" : "name is required"}), 400
             
-        except sqlite3.IntegrityError:
-            return jsonify({"error" : f"{name} is already exists"}), 409
-        
-        count+=1
-    con.close()
-    return jsonify({
-        "status" : "success",
-        "add" : count
-    }), 201
+            if marks is None:
+                return jsonify({"error" : "marks is required"}), 400
+                
+            if not isinstance(marks,int):
+                return jsonify({"error" : "marks must be an integer"}), 400
+            
+            grade = get_grade(marks)
+            
+            try:
+                cursor.execute(
+                "INSERT INTO students(name,marks,grade) VALUES(?,?,?)",
+                (name,marks,grade)
+                )
+                con.commit()
+                
+            except sqlite3.IntegrityError:
+                con.close()
+                return jsonify({"error" : f"{name} already exists"}), 409
+            
+            count+=1
+        con.close()
+        return jsonify({
+            "status" : "success",
+            "add" : count
+        }), 201
+    
+    except Exception as e:
+        return jsonify({"error" : f"Server error: {str(e)}"}), 500
 
 #funtion to fetch all data
 @app.route("/students",methods=['GET'])
