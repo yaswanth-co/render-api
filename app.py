@@ -1,8 +1,10 @@
 from flask import Flask,request,jsonify
+from flask_cors import CORS
 import sqlite3
 import os
 
 app = Flask('__name__')
+CORS(app)
 
 #funtion to display info doc
 @app.route('/')
@@ -17,9 +19,6 @@ def doc():
             "DELETE /student/<name>" : "delete student"
         }
     }
-
-#versioning for later upgrades
-@app.route("/api/v1/students")
 
 #funtion to check the health
 @app.route("/health")
